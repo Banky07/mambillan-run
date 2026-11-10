@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mambillan Run: Jalingo to Gembu</title>
+<meta name="description" content="Drive a tea lorry up the Mambilla Plateau, from Jalingo to Gembu. A 3D browser game.">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c2a22;--tea:#2f6b3a;--clay:#b5532e;--gold:#e9b44c;--mist:#eef3ee}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--mist);font-family:'Bricolage Grotesque',system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{display:block;width:100%;height:100%}
+#hud{position:fixed;inset:0 0 auto 0;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 0;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;font-weight:800;font-size:20px;text-shadow:0 1px 4px #0009}
+#hud small{display:block;font-weight:500;font-size:13px;opacity:.9}
+#hud .r{text-align:right;color:#ff8a70;letter-spacing:2px}
+#bar{position:fixed;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);height:8px;border-radius:4px;background:#0006;pointer-events:none;overflow:hidden}
+#bar i{display:block;height:100%;width:0;background:var(--gold)}
+#toast{position:fixed;left:50%;top:22%;transform:translate(-50%,-10px);width:min(86vw,460px);padding:14px 18px;border-radius:10px;background:#1c2a22dd;border-left:6px solid var(--gold);opacity:0;transition:.4s;pointer-events:none}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast b{display:block;font-size:24px;color:var(--gold)}
+#toast span{font-weight:500;font-size:15px;line-height:1.35}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:linear-gradient(#1c2a2288,#1c2a22ee)}
+#ov.hide{display:none}
+.card{width:min(94vw,480px);text-align:left}
+h1{font-size:clamp(46px,13vw,76px);line-height:.92;font-weight:800;color:var(--gold);letter-spacing:-1.5px;margin-bottom:12px}
+p{font-weight:500;line-height:1.4;font-size:17px;margin-bottom:14px}
+h2{font-size:15px;font-weight:800;margin:4px 0 8px}
+.st{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.st span{padding:5px 10px;border:2px solid #eef3ee55;border-radius:999px;font-size:13px;font-weight:500;opacity:.7}
+.st span.on{background:var(--tea);border-color:var(--gold);color:var(--gold);font-weight:800;opacity:1}
+button{font:inherit;font-weight:800;font-size:19px;padding:13px 22px;margin:0 8px 8px 0;border:0;border-radius:10px;background:var(--clay);color:#fff;cursor:pointer}
+button.alt{background:transparent;border:2px solid var(--mist)}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+small.h{display:block;opacity:.75;font-size:13px;line-height:1.4}
+#mu{position:fixed;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);margin:0;padding:6px 12px;font-size:14px;background:#1c2a22cc;z-index:5}
+#lb{margin-top:10px}ol{padding-left:22px;font-size:15px;font-weight:500;line-height:1.5;margin-bottom:8px}
+input{font:inherit;padding:11px;border-radius:8px;border:2px solid var(--mist);background:#0003;color:var(--mist);width:150px;margin:0 8px 8px 0}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style></head><body>
+<div id="hud"><div><span id="m">0 m</span><small id="lf">Leaves 0</small></div><div style="text-align:center"><span id="sn">Jalingo</span><small id="al"></small></div><div class="r" id="hp"></div></div>
+<div id="bar"><i id="pr"></i></div>
+<div id="toast"></div>
+<div id="ov"><div class="card" id="card"></div></div><button id="mu">Sound on</button>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const ST=[
+{at:0,n:'Jalingo',t:"Taraba's capital. Red earth, open savanna and the long road up to the plateau.",sky:0x8fd3f0,gr:0xb8a45a,hill:0xa08a4c,lf:0x8a9a3a,tr:5,hh:7,fd:210,ac:1,hut:1,ob:['pot','okada','okada','lorry']},
+{at:800,n:'Bali',t:'Farmland and market towns. Watch for okadas and potholes.',sky:0x93d6ee,gr:0x86ad4c,hill:0x7a9a48,lf:0x4a8a3a,tr:6,hh:9,fd:210,ac:1,hut:1,ob:['pot','okada','lorry','cow']},
+{at:1600,n:'Serti',t:'The climb begins. Cooler air, loose rock, and ravines opening up beside the road.',sky:0x9fc2d8,gr:0x6b9a4a,hill:0x5f8a50,lf:0x2f7a3a,tr:8,hh:16,fd:180,ob:['pot','rock','lorry','cow']},
+{at:2400,n:'Ngel Nyaki Forest',t:'Montane forest and mist on the plateau edge. Visibility drops.',sky:0xbdcdc8,gr:0x3f7f45,hill:0x2f6a42,lf:0x1f6a3a,tr:16,hh:20,fd:110,ob:['pot','rock','cow','lorry']},
+{at:3200,n:'Mambilla Tea Highlands',t:'Rolling tea estates and grazing cattle, over 1,500 m above sea level.',sky:0xcfe3e6,gr:0x55a24e,hill:0x4a9448,lf:0x2f8a3a,tr:3,hh:14,fd:160,tea:1,cow:1,ob:['pot','cow','cow','rock']},
+{at:4000,n:'Gembu',t:'Gembu, capital of Sardauna LGA. You made it to the top of the plateau.',sky:0xf0cf9c,gr:0x5f9450,hill:0x4f7f4a,lf:0x2f7a3a,tr:5,hh:24,fd:190,tea:1,cow:1,hut:1,ob:['pot','cow','okada','rock']},
+{at:4800,n:'Chappal Waddi',t:"Nigeria's highest peak, 2,419 m, rises beyond Gembu. Keep running.",sky:0xaebbd8,gr:0x6b8a5a,hill:0x4a6a52,lf:0x2a6a42,tr:6,hh:34,fd:200,ob:['pot','rock','cow','lorry','okada']}];
+const GEMBU=4000;
+let rainOn=0,rainSel=0,rainT=0; /* declared early: fill() and env() read rainOn while the scene is built */
+const GR={'Jalingo':['Sannu da zuwa!','Welcome!'],'Bali':['Sannu da aiki!','Well done on your effort!'],'Serti':['Allah ya kiyaye hanya.','May God protect the road.'],'Ngel Nyaki Forest':['Ka yi hankali!','Be careful!'],'Mambilla Tea Highlands':['Mu sha shayi!',"Let's drink tea!"],'Gembu':['Barka da zuwa Gembu!','Welcome to Gembu!'],'Chappal Waddi':['Ka yi kokari!','Well done, keep going!']};
+const MB={}; /* add verified Mambila greetings here, e.g. MB['Gembu']='...' */
+ST.forEach(s=>{s.hs=GR[s.n][0];s.he=GR[s.n][1];s.mb=MB[s.n]||''});
+ST.slice(2).forEach(s=>s.ob.push('gap'));ST.forEach((s,i)=>s.rv=[0,0,.25,.35,.4,.45,.5][i]); /* rv = chance a road segment runs beside a ravine */
+const alt=d=>d<GEMBU?360+d/GEMBU*1440:1800+Math.min(600,(d-GEMBU)/800*600); /* approximate metres above sea level: about 360 at Jalingo, about 1,800 at Gembu, 2,400 near Chappal Waddi */
+const gt=s=>(s.mb?s.mb+' / ':'')+s.hs;
+let SV={best:0,leaves:0,stamps:[],streak:0,last:'',runs:0};
+try{Object.assign(SV,JSON.parse(localStorage.getItem('mrun')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('mrun',JSON.stringify(SV))}catch(e){}};
+{const d=new Date(),f=x=>x.toISOString().slice(0,10),today=f(d);
+ if(SV.last!==today){SV.streak=SV.last===f(new Date(Date.now()-864e5))?SV.streak+1:1;SV.last=today;save()}}
+
+/* ---------- three setup ---------- */
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;document.body.prepend(R.domElement);
+const S=new THREE.Scene(),C=new THREE.PerspectiveCamera(65,1,.1,300);
+S.background=new THREE.Color(ST[0].sky);S.fog=new THREE.Fog(ST[0].sky,40,ST[0].fd);
+S.add(new THREE.HemisphereLight(0xffffff,0x667755,.95));
+const DL=new THREE.DirectionalLight(0xfff2d8,1.05);DL.position.set(10,16,-4);DL.target.position.set(0,0,-20);S.add(DL,DL.target);DL.castShadow=true;
+{const sm=DL.shadow,q=innerWidth<800?1024:2048;sm.mapSize.set(q,q);Object.assign(sm.camera,{left:-14,right:14,top:45,bottom:-45,near:1,far:70});sm.bias=-.0006}
+let SUN;{const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,'rgba(255,248,220,1)');r.addColorStop(.25,'rgba(255,230,160,.6)');r.addColorStop(1,'rgba(255,220,150,0)');g.fillStyle=r;g.fillRect(0,0,128,128);
+ SUN=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),fog:false,depthWrite:false,transparent:true}));SUN.scale.set(110,110,1);SUN.position.set(-45,60,-260);S.add(SUN)}
+function fit(){R.setSize(innerWidth,innerHeight);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()}
+addEventListener('resize',fit);fit();
+const MC={},mat=c=>MC[c]||(MC[c]=new THREE.MeshStandardMaterial({color:c,roughness:.85,metalness:.06}));
+const B=new THREE.BoxGeometry(1,1,1),K=new THREE.ConeGeometry(1,1,6),Y=new THREE.CylinderGeometry(1,1,1,10),O=new THREE.OctahedronGeometry(.5),IC=new THREE.IcosahedronGeometry(1,1);
+function tex(base,sz,rx,ry){const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');g.fillStyle=base;g.fillRect(0,0,256,256);
+ for(let i=0;i<9000;i++){g.fillStyle=Math.random()<.5?'rgba(0,0,0,'+Math.random()*.16+')':'rgba(255,255,255,'+Math.random()*.1+')';g.fillRect(Math.random()*256,Math.random()*256,sz,sz)}
+ const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.anisotropy=4;return t}
+const gM=new THREE.MeshStandardMaterial({color:ST[0].gr,roughness:1,map:tex('#fff',3,30,15)}),hM=new THREE.MeshStandardMaterial({color:ST[0].hill,roughness:1}),rM=new THREE.MeshStandardMaterial({map:tex('#44464a',2,1,8),roughness:.92});
+const HG=[0,1,2].map(n=>{const g=new THREE.SphereGeometry(1,18,12),p=g.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),k=1+.18*Math.sin(x*3+n*2)*Math.cos(z*3+n)+.1*Math.sin(y*5+x*2);p.setXYZ(i,x*k,y*k,z*k)}g.computeVertexNormals();return g});
+function mk(g,c,sx,sy,sz,x,y,z){const m=new THREE.Mesh(g,typeof c=='object'?c:mat(c));m.scale.set(sx,sy,sz);m.position.set(x,y,z);return m}
+const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.random()*a.length|0];
+const tc=new THREE.Color(),GRY=new THREE.Color(0x6f7b80);
+function env(b,k){tc.set(b.sky);if(rainOn)tc.lerp(GRY,.55);S.background.lerp(tc,k);S.fog.color.copy(S.background);tc.set(b.gr);gM.color.lerp(tc,k);tc.set(b.hill);hM.color.lerp(tc,k);S.fog.far+=(b.fd*(rainOn?.65:1)-S.fog.far)*k}
+const bi=d=>{let i=0;ST.forEach((s,j)=>{if(d>=s.at)i=j});return i};
+
+/* ---------- player: tea lorry ---------- */
+const P=new THREE.Group();
+P.add(mk(B,0xb5532e,1.9,.8,4,0,.85,0),mk(B,0xeef3ee,1.7,.85,1.5,0,1.65,-1.1),mk(B,0x9fd0e8,1.5,.4,.1,0,1.8,-1.86),
+ mk(B,0x3f8a4a,1.5,.7,1.7,0,1.55,.9),mk(B,0x4fa05a,1.2,.5,1.2,0,2.1,.9),mk(B,0xff3322,.3,.2,.1,-.7,1,2.02),mk(B,0xff3322,.3,.2,.1,.7,1,2.02),mk(B,0xfff2b0,.3,.25,.1,-.65,.95,-2.02),mk(B,0xfff2b0,.3,.25,.1,.65,.95,-2.02));
+[[-1,-1.3],[1,-1.3],[-1,1.3],[1,1.3]].forEach(([x,z])=>{const w=mk(Y,0x111111,.48,.4,.48,x,.48,z);w.rotation.z=Math.PI/2;P.add(w)});
+P.traverse(o=>o.castShadow=true);S.add(P);
+const DN=50,dp=new Float32Array(DN*3).fill(99),dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(dp,3));
+const dust=new THREE.Points(dg,new THREE.PointsMaterial({color:0xc9b48a,size:.9,transparent:true,opacity:.45,depthWrite:false}));dust.frustumCulled=false;S.add(dust);
+const RN=400,rp=new Float32Array(RN*3),rg=new THREE.BufferGeometry();for(let i=0;i<RN;i++){rp[i*3]=rnd(-16,16);rp[i*3+1]=rnd(0,14);rp[i*3+2]=rnd(-40,10)}rg.setAttribute('position',new THREE.BufferAttribute(rp,3));
+const RP=new THREE.Points(rg,new THREE.PointsMaterial({color:0xcfe0ea,size:.22,transparent:true,opacity:.7,depthWrite:false}));RP.frustumCulled=false;RP.visible=false;S.add(RP);
+/* valley clouds */
+const CL=[],cc=document.createElement('canvas');cc.width=cc.height=64;{const g=cc.getContext('2d'),r=g.createRadialGradient(32,32,0,32,32,32);r.addColorStop(0,'rgba(255,255,255,.9)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,64,64)}
+const cm=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cc),transparent:true,opacity:0,depthWrite:false});
+for(let i=0;i<16;i++){const c=new THREE.Sprite(cm),w=rnd(26,50);c.scale.set(w,w*.35,1);c.position.set(pick([-1,1])*rnd(9,45),rnd(-12,2),rnd(-180,10));S.add(c);CL.push(c)}
+/* General mountain-road advice, not official guidance. Check against FRSC or local sources before publishing as authority. */
+const TIPS=['Wet red earth is slippery and road edges can give way. Slow down on the plateau roads in the rainy season.','Hold your lane on bends. Overtaking near a ravine edge is how many mountain crashes start.','Use a low gear on long descents. Riding the brakes all the way down can overheat them.','Travel in daylight where you can. Mist and darkness hide washed-out sections.','Heavy lorries and cattle share the road. Give them room and slow down.'];
+
+/* ---------- road segments ---------- */
+const L=60,N=9,segs=[];
+for(let i=0;i<N;i++){const g=new THREE.Group(),dec=new THREE.Group();
+ const rd=mk(B,rM,10,.2,L,0,-.1,0);rd.receiveShadow=true;g.gl=mk(B,gM,120,.2,L,-65,-.12,0);g.gr=mk(B,gM,120,.2,L,65,-.12,0);
+ g.rl=mk(B,0x9a9a9a,.12,.7,L,-7.6,.35,0);g.rr=mk(B,0x9a9a9a,.12,.7,L,7.6,.35,0);
+ g.add(rd,g.gl,g.gr,g.rl,g.rr,mk(B,0x8a5a38,3,18,L,-6.5,-9.12,0),mk(B,0x8a5a38,3,18,L,6.5,-9.12,0),dec);
+ for(let j=0;j<5;j++)[-1.5,1.5].forEach(x=>g.add(mk(B,0xe8e0c0,.15,.02,4,x,.02,-L/2+6+j*12)));
+ g.dec=dec;g.position.z=30-i*L;S.add(g);segs.push(g)}
+function cow(){const g=new THREE.Group();g.add(mk(B,0xf2efe6,1,1,2.2,0,1.2,0),mk(B,0x5b3a29,1.02,.6,.9,0,1.3,.3),mk(B,0xe8e0d0,.7,.7,.9,0,1.5,-1.4),
+ mk(K,0xf5f0d8,.12,.5,.12,-.3,2,-1.4),mk(K,0xf5f0d8,.12,.5,.12,.3,2,-1.4));
+ [[-.35,-.8],[.35,-.8],[-.35,.8],[.35,.8]].forEach(([x,z])=>g.add(mk(B,0xd8d2c0,.2,.8,.2,x,.4,z)));return g}
+function fill(sg,d){sg.dec.clear();const b=ST[bi(d)],D=sg.dec;
+ for(let i=0;i<b.tr;i++){const s=pick([-1,1]),k=rnd(.8,1.6),g=new THREE.Group();
+  if(b.ac)g.add(mk(Y,0x6b4a2b,.2*k,2.2*k,.2*k,0,1.1*k,0),mk(IC,b.lf,2.4*k,.55*k,2.4*k,0,2.4*k,0));
+  else g.add(mk(Y,0x6b4a2b,.25*k,1.8*k,.25*k,0,.9*k,0),mk(IC,b.lf,1.8*k,1.7*k,1.8*k,0,3.2*k,0),mk(IC,b.lf,1.3*k,1.2*k,1.3*k,.3*k,4.4*k,.2*k));
+  g.position.set(s*rnd(7,36),0,rnd(-30,30));D.add(g)}
+ for(let i=0;i<2;i++){const r=rnd(10,20),h=b.hh*rnd(.6,1.2);D.add(mk(pick(HG),hM,r,h,r,pick([-1,1])*rnd(32,70),0,rnd(-30,30)))}
+ if(b.hut)for(let i=0;i<2;i++){const g=new THREE.Group();g.add(mk(B,0xc98a5a,2.4,1.6,2.4,0,.8,0),mk(K,0x8a6a3a,2,1.2,2,0,2.2,0));g.position.set(pick([-1,1])*rnd(8,16),0,rnd(-28,28));D.add(g)}
+ if(b.tea)for(let i=0;i<2;i++){const s=pick([-1,1]),x=s*rnd(9,16),z=rnd(-24,24);for(let j=0;j<4;j++)D.add(mk(B,0x3f9a48,.9,.7,14,x+s*j*1.7,.35,z))}
+ if(b.cow)for(let i=0;i<2;i++){const c=cow();c.position.set(pick([-1,1])*rnd(8,14),0,rnd(-28,28));c.rotation.y=rnd(0,6);D.add(c)}
+ const rv=Math.random()<(b.rv||0)*(rainOn?1.4:1)?pick([-1,1]):0;sg.rv=rv;sg.gl.position.y=rv==-1?-18:-.12;sg.gr.position.y=rv==1?-18:-.12;sg.rl.visible=rv==-1;sg.rr.visible=rv==1;
+ if(rv)D.children.slice().forEach(c=>{if(c.position.x*rv>0){if(Math.abs(c.position.x)<9)D.remove(c);else c.position.y-=18}})}
+segs.forEach((s,i)=>fill(s,i*L));
+
+/* ---------- obstacles, leaves, gates ---------- */
+function ob(t){const g=new THREE.Group();let h=1,jump=0,fall=0;
+ if(t=='pot'){g.add(mk(Y,0x15130f,1.3,.12,1.3,0,.03,0),mk(Y,0x6b4a2b,1.55,.08,1.55,0,.01,0));h=1.2;jump=1}
+ else if(t=='cow'){const c=cow();g.add(c);h=1.4}
+ else if(t=='okada'){g.add(mk(B,0xe9b44c,.5,.6,2,0,.8,0),mk(B,0x222222,.5,.9,.5,0,1.5,.2),mk(B,0xb5532e,.4,.4,.4,0,2.1,.2));
+  [-.8,.8].forEach(z=>{const w=mk(Y,0x111111,.4,.2,.4,0,.4,z);w.rotation.z=Math.PI/2;g.add(w)});h=1.1}
+ else if(t=='gap'){g.add(mk(B,0x0b0907,3.6,.06,10,0,.03,0),mk(B,0x2a1d12,3.8,.3,.5,0,.15,5),mk(B,0x2a1d12,3.8,.3,.5,0,.15,-5));[-1.4,0,1.4].forEach(x=>g.add(mk(K,0xff7a1a,.35,.9,.35,x,.45,-6.5)));h=5;fall=1}
+ else if(t=='rock'){g.add(mk(K,0x7d7a72,1.7,2,1.7,0,1,0),mk(B,0x6a675f,1.2,1,1.2,.7,.5,.4));h=1.5}
+ else{g.add(mk(B,0x2b5f9e,2.3,2.2,1.6,0,1.5,-2),mk(B,0xd8d2c0,2.4,2.4,4,0,1.7,1),mk(B,0x3f8a4a,2,.6,3.4,0,3.1,1));h=3.2}
+ return{m:g,h,jump,fall}}
+function mkGate(n,t){const c=document.createElement('canvas');c.width=1024;c.height=256;const g=c.getContext('2d');
+ g.fillStyle='#2f6b3a';g.fillRect(0,0,1024,256);g.strokeStyle='#e9b44c';g.lineWidth=10;g.strokeRect(10,10,1004,236);
+ let s=96;g.font='800 '+s+'px Bricolage Grotesque,system-ui,sans-serif';while(g.measureText(n).width>920){s-=4;g.font='800 '+s+'px Bricolage Grotesque,system-ui,sans-serif'}
+ g.fillStyle='#e9b44c';g.textAlign='center';g.fillText(n,512,140);g.fillStyle='#eef3ee';g.font='500 36px system-ui,sans-serif';g.fillText(t,512,212);
+ const p=new THREE.Mesh(new THREE.PlaneGeometry(12,3),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c)}));p.position.set(0,6.5,0);
+ const G=new THREE.Group();G.add(p,mk(B,0xb5532e,.6,8,.6,-6.3,4,0),mk(B,0xb5532e,.6,8,.6,6.3,4,0));return G}
+const ents=[];
+function add(m,x,z,e){if(e.t=='ob')m.traverse(o=>o.castShadow=true);m.position.x=x;m.position.z=z;S.add(m);e.m=m;ents.push(e)}
+function spawn(b){const ls=[-1,0,1].sort(()=>Math.random()-.5),nb=dist>300&&Math.random()<.35?2:1,free=ls[nb];
+ for(let i=0;i<nb;i++){const o=ob(rainOn&&dist>1600&&Math.random()<.25?'gap':pick(b.ob));add(o.m,ls[i]*3,-190,{t:'ob',h:o.h,jump:o.jump,fall:o.fall,lane:ls[i]})}
+ for(let j=0;j<5;j++){const m=mk(O,0x6fd06a,.9,1.5,.35,0,1.2,0);m.rotation.z=.5;add(m,free*3,-190-j*3.2,{t:'leaf',lane:free})}}
+
+/* ---------- set-piece events: single-lane river bridge, cattle crossing ---------- */
+const EV=[{at:2000,k:'bridge'},{at:3500,k:'cattle'},{at:4400,k:'bridge'},{at:5200,k:'cattle'}];
+function clearNear(z){for(let i=ents.length-1;i>=0;i--){const e=ents[i];if(e.t!='gate'&&e.m.position.z<z+40&&e.m.position.z>z-40){S.remove(e.m);ents.splice(i,1)}}}
+function herder(){const g=new THREE.Group();g.add(mk(B,0x6a4a8a,.6,1.2,.4,0,1.1,0),mk(B,0xc98a5a,.4,.4,.4,0,1.9,0),mk(K,0xe9d9a0,.7,.4,.7,0,2.25,0),mk(B,0x6b4a2b,.08,2,.08,.5,1,0));return g}
+function evt(k,dz){const z=-dz;clearNear(z);spawnIn=60;
+ if(k=='bridge'){toast('Mambilla River Bridge','Single-lane bridge ahead. Centre lane only.');add(mkGate('River bridge','Centre lane only'),0,z+22,{t:'gate'});
+  const g=new THREE.Group();g.add(mk(B,0x3a7ca5,60,.12,14,-35,0,0),mk(B,0x3a7ca5,60,.12,14,35,0,0),mk(B,0x9a9a9a,.2,1,14,-4.9,.5,0),mk(B,0x9a9a9a,.2,1,14,4.9,.5,0));add(g,0,z,{t:'gate'});
+  [-1,1].forEach(l=>add(mk(B,0xb8b2a0,3.2,1.2,14,0,.6,0),l*3,z,{t:'ob',h:7,lane:l}))}
+ else{toast('Cattle crossing','Herders are moving cattle over the road. Weave through.');add(mkGate('Cattle crossing','Herders on the road'),0,z+22,{t:'gate'});
+  for(let i=0;i<5;i++){const d=i%2?1:-1,c=cow();c.rotation.y=-d*Math.PI/2;add(c,-d*(10+i*3.5),z-i*5,{t:'ob',h:1.4,lane:0,vx:d*(4+i*.3)})}
+  add(herder(),-12,z-26,{t:'gate',vx:4})}}
+/* ---------- audio ---------- */
+let AC,MG,mut=0,seqI,step=0,nextT=0,root=261.6,musFile=0;
+function ctx(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=mut?0:.8;MG.connect(AC.destination)}return AC}
+function beep(f,d,ty){try{ctx();const o=AC.createOscillator(),g=AC.createGain();o.type=ty||'sine';o.frequency.value=f;g.gain.value=.06;o.connect(g);g.connect(MG);o.start();g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+/* Soundtrack: procedural West African-style loop (hand drum, shaker, kalimba-like pentatonic). Drop a recording named music.mp3 beside index.html and it replaces this. */
+const mf=new Audio('music.mp3');mf.loop=true;mf.volume=.6;mf.addEventListener('canplaythrough',()=>musFile=1,{once:true});
+function tn(t,f,d,ty,g,f2){const o=AC.createOscillator(),G=AC.createGain();o.type=ty;o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);G.gain.setValueAtTime(g,t);G.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(G);G.connect(MG);o.start(t);o.stop(t+d)}
+function nz(t,d,f,g){const n=AC.sampleRate*d|0,b=AC.createBuffer(1,n,AC.sampleRate),a=b.getChannelData(0);for(let i=0;i<n;i++)a[i]=Math.random()*2-1;const s=AC.createBufferSource(),h=AC.createBiquadFilter(),G=AC.createGain();s.buffer=b;h.type='highpass';h.frequency.value=f;G.gain.setValueAtTime(g,t);G.gain.exponentialRampToValueAtTime(.001,t+d);s.connect(h);h.connect(G);G.connect(MG);s.start(t)}
+const KD=[1,0,0,0,0,0,1,0,0,1,0,0,0,0,1,0],TK=[0,0,1,0,0,1,0,0,0,0,1,0,1,0,0,1],PN=[0,2,4,7,9,12];
+function sched(){const sp=60/104/4;while(nextT<AC.currentTime+.15){const t=nextT,s=step%16;
+ if(KD[s])tn(t,150,.25,'sine',.9,55);if(TK[s])tn(t,320,.12,'sine',.35,220);
+ if(s%2==0)nz(t,.05,6000,.12);else if(Math.random()<.4)nz(t,.03,8000,.06);
+ if(Math.random()<(s%4==0?.8:.4)){const n=root*Math.pow(2,pick(PN)/12);tn(t,n,.5,'triangle',.22);tn(t,n*2,.25,'sine',.06)}
+ if(step%32==0)tn(t,root/2,1.8,'sine',.18);nextT+=sp;step++}}
+function music(on){clearInterval(seqI);if(mut)on=0;if(musFile){on?mf.play().catch(()=>{}):mf.pause();return}if(!on)return;try{ctx();nextT=AC.currentTime+.05;seqI=setInterval(sched,40)}catch(e){}}
+function toggleMute(){mut=!mut;$('mu').textContent=mut?'Sound off':'Sound on';if(MG)MG.gain.value=mut?0:.8;music(st=='play')}
+$('mu').onclick=toggleMute;
+
+/* ---------- state ---------- */
+let tum=0,wind=0,gustIn=15,gustT=0,gustDir=0,tipT=8,tipI=0,posted=0,runT=0,st='menu',v=6,dist=0,lives=3,leaves=0,lane=0,px=0,py=0,vy=0,inv=0,spawnIn=40,stage=0,shake=0,t=0,gated={},reachedG=false,toastT;
+const clock=new THREE.Clock();
+function toast(n,tx){const e=$('toast');e.innerHTML='<b>'+n+'</b><span>'+tx+'</span>';e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),4200)}
+function stamps(){return ST.map(s=>'<span class="'+(SV.stamps.includes(s.n)?'on':'')+'">'+s.n+'</span>').join('')+'<span class="'+(SV.stamps.includes('Rain Gembu')?'on':'')+'">Gembu in the rains</span>'}
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+async function lb(post){try{const r=await fetch('/api/leaderboard',post?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(post)}:undefined);if(!r.ok)throw 0;return await r.json()}catch(e){return null}}
+function lbUI(k,c){const d=document.createElement('div');d.id='lb';c.appendChild(d);
+ const draw=j=>{d.innerHTML="<h2>This week's top drivers</h2>"+(j&&j.top.length?'<ol>'+j.top.map(x=>'<li>'+esc(x.name)+': '+x.score.toLocaleString()+' m</li>').join('')+'</ol>':'<small class="h">'+(j?'No scores yet this week. Be the first.':'Leaderboard offline. Your scores are still saved on this device.')+'</small>');
+  if(k=='over'&&dist>50&&j&&!posted){d.insertAdjacentHTML('afterbegin','<input id="nm" maxlength="14" placeholder="Your name" value="'+esc(SV.name||'')+'"><button id="pb">Post score</button>');
+   $('pb').onclick=async()=>{const n=$('nm').value.trim();if(!n)return;SV.name=n;save();posted=1;draw(await lb({name:n,score:Math.floor(dist),secs:Math.floor(runT)}))}}};
+ lb().then(draw)}
+function modeUI(c){const d=document.createElement('div');
+ if(SV.stamps.includes('Gembu')){const b=document.createElement('button'),f=()=>{b.textContent='Rainy season: '+(rainSel?'on':'off')};b.className='alt';f();b.onclick=()=>{rainSel=rainSel?0:1;rainOn=rainSel;rM.roughness=rainOn?.3:.92;f()};d.appendChild(b)}
+ else d.innerHTML='<small class="h">Reach Gembu to unlock rainy season: slippery roads, heavy rain and more washouts.</small>';c.insertBefore(d,$('lb'))}
+function card(){const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),b=ST[stage],hx=x=>'#'+x.toString(16).padStart(6,'0'),F='Bricolage Grotesque,system-ui,sans-serif';
+ const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,hx(b.sky));gr.addColorStop(.7,'#eef3ee');g.fillStyle=gr;g.fillRect(0,0,W,H);
+ g.fillStyle=hx(b.hill);[[100,1050,520,260],[620,1050,560,300],[1000,1050,420,220]].forEach(([x,y,rx,ry])=>{g.beginPath();g.ellipse(x,y,rx,ry,0,Math.PI,0);g.fill()});
+ g.fillStyle=hx(b.gr);g.fillRect(0,1050,W,H-1050);g.fillStyle='#3b3d40';g.beginPath();g.moveTo(W/2-90,1050);g.lineTo(W/2+90,1050);g.lineTo(W/2+330,H);g.lineTo(W/2-330,H);g.fill();
+ g.fillStyle='#1c2a22';g.textAlign='left';g.font='800 96px '+F;g.fillText('Mambillan Run',70,150);
+ let z=120;g.font='800 '+z+'px '+F;while(g.measureText(b.n).width>940){z-=6;g.font='800 '+z+'px '+F}g.fillText(b.n,70,330);
+ g.font='800 230px '+F;g.fillText(Math.floor(dist).toLocaleString()+' m',70,590);
+ g.font='500 44px '+F;g.fillText(leaves+' tea leaves. '+Math.round(alt(dist)).toLocaleString()+' m above sea level.'+(rainOn?' Rainy season.':''),70,670);
+ g.fillText(ST.filter(x=>SV.stamps.includes(x.n)).length+' of '+ST.length+' stamps. Can you reach Gembu?',70,730);
+ g.fillStyle='#fff';g.font='500 40px '+F;g.fillText(location.host||'Mambillan Run',70,H-60);
+ c.toBlob(async bl=>{const f=new File([bl],'mambillan-run.png',{type:'image/png'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:'Can you make it to Gembu? '+location.href});return}catch(e){}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(bl);a.download='mambillan-run.png';a.click()})}
+function show(k){const o=$('ov'),c=$('card');o.classList.remove('hide');
+ const nx=ST.find(s=>!SV.stamps.includes(s.n));
+ const info='<small class="h">Best: '+Math.floor(SV.best).toLocaleString()+' m. Streak: '+SV.streak+(SV.streak==1?' day':' days')+'. Stamps: '+ST.filter(s=>SV.stamps.includes(s.n)).length+' of '+ST.length+'.'+(nx?' Next stamp: '+nx.n+' at '+nx.at.toLocaleString()+' m.':' Full passport. Beat your best.')+'</small>';
+ if(k=='menu')c.innerHTML='<h1>Mambillan Run</h1><p>Drive a tea lorry from Jalingo up the Mambilla Plateau to Gembu. Dodge cattle, okadas and potholes, collect tea leaves, and earn a stamp in every town and landscape.</p><h2>Your journey stamps</h2><div class="st">'+stamps()+'</div><button id="go">Start the journey</button>'+info+'<small class="h" style="margin-top:8px">Arrow keys or A/D change lane. Space or swipe up jumps potholes. On a phone, swipe left or right to change lane.</small>';
+ else{const sn=ST[stage].n;c.innerHTML='<h1>'+(reachedG?'You reached Gembu':'Run over at '+sn)+'</h1><p>'+Math.floor(dist).toLocaleString()+' m driven, '+leaves+' leaves collected.'+(dist>=SV.best&&dist>50?' New personal best.':'')+'</p><h2>Your journey stamps</h2><div class="st">'+stamps()+'</div><button id="go">Run again</button><button class="alt" id="sh">Share score</button><button class="alt" id="cd">Result card</button>'+info}
+ $('go').onclick=start;lbUI(k,c);modeUI(c);const cd=$('cd');if(cd)cd.onclick=card;const sh=$('sh');if(sh)sh.onclick=()=>{const x='I reached '+ST[stage].n+' on Mambillan Run, '+Math.floor(dist)+' m up the Mambilla Plateau. Can you make it to Gembu? '+location.href;
+  if(navigator.share)navigator.share({text:x}).catch(()=>{});else if(navigator.clipboard){navigator.clipboard.writeText(x);sh.textContent='Copied to clipboard'}}}
+function start(){ents.splice(0).forEach(e=>S.remove(e.m));dist=0;lives=3;leaves=0;lane=0;px=0;py=0;vy=0;inv=0;spawnIn=40;stage=0;gated={};reachedG=false;st='play';rainOn=rainSel;rM.roughness=rainOn?.3:.92;EV.forEach(x=>x.d=0);env(ST[0],1);
+ $('ov').classList.add('hide');beep(440,.1);root=261.6;music(1);posted=0;runT=0;tum=0;wind=0;gustIn=15;gustT=0;tipT=8;toast(ST[0].n,gt(ST[0])+' ('+ST[0].he+') '+ST[0].t);if(!SV.stamps.includes('Jalingo')){SV.stamps.push('Jalingo');save()}}
+function end(){st='over';SV.best=Math.max(SV.best,dist);SV.leaves+=leaves;SV.runs++;save();beep(120,.5,'sawtooth');music(0);setTimeout(()=>show('over'),700)}
+
+/* ---------- input ---------- */
+function mv(d){if(st=='play'){lane=Math.max(-1,Math.min(1,lane+d));beep(300,.05)}}
+function jump(){if(st=='play'&&py<=.01&&tum<=0){vy=15;beep(520,.08)}}
+addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(k=='arrowleft'||k=='a')mv(-1);else if(k=='arrowright'||k=='d')mv(1);else if(k=='arrowup'||k==' '||k=='w'){jump();if(k==' ')e.preventDefault()}else if(k=='enter'&&st!='play')start();else if(k=='m')toggleMute()});
+let tx=0,ty=0;
+addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
+addEventListener('touchend',e=>{const q=e.changedTouches[0],dx=q.clientX-tx,dy=q.clientY-ty;
+ if(Math.abs(dx)>30&&Math.abs(dx)>Math.abs(dy))mv(dx>0?1:-1);else if(dy<-30)jump();else if(Math.abs(dx)<10&&Math.abs(dy)<10&&e.target.tagName!='BUTTON')jump()},{passive:true});
+
+/* ---------- loop ---------- */
+function tick(){const dt=Math.min(clock.getDelta(),.05);t+=dt;
+ const tv=st=='play'?Math.min(18+dist*.0045,38):st=='menu'?7:0;v+=(tv-v)*Math.min(1,dt*2);
+ const mvz=v*dt;if(st=='play'){dist+=mvz;runT+=dt}
+ segs.forEach(s=>{s.position.z+=mvz;if(s.position.z>42){s.position.z-=N*L;fill(s,dist+N*L-30)}});
+ const si=bi(dist);env(ST[st=='play'?si:stage],Math.min(1,dt*1.2));
+ if(st=='play'){
+  if(si>stage){stage=si;const s=ST[si];toast(s.n,gt(s)+' ('+s.he+') '+s.t);root=[261.6,293.7,329.6,261.6,349.2,392,329.6][si];beep(660,.15);beep(880,.25);if(!SV.stamps.includes(s.n)){SV.stamps.push(s.n);save()}if(s.n=='Gembu'){reachedG=true;if(rainOn&&!SV.stamps.includes('Rain Gembu')){SV.stamps.push('Rain Gembu');save()}}}
+  for(let i=1;i<ST.length;i++)if(!gated[i]&&dist+170>=ST[i].at){gated[i]=1;const g=mkGate(ST[i].n,gt(ST[i])+' ('+ST[i].he+')');add(g,0,-(ST[i].at-dist),{t:'gate'})}
+  EV.forEach(x=>{if(!x.d&&dist+170>=x.at){x.d=1;evt(x.k,x.at-dist)}});spawnIn-=mvz;if(spawnIn<=0){spawn(ST[si]);spawnIn=Math.max(16,40-dist*.004)+rnd(0,10)}
+  vy-=45*dt;py+=vy*dt;if(py<0){py=0;vy=0}
+  inv=Math.max(0,inv-dt)}
+ for(let i=ents.length-1;i>=0;i--){const e=ents[i],m=e.m;m.position.z+=mvz;if(e.vx)m.position.x+=e.vx*dt;if(e.t=='leaf')m.rotation.y+=dt*3;
+  if(m.position.z>16){S.remove(m);ents.splice(i,1);continue}
+  if(st=='play'&&e.t!='gate'&&Math.abs(m.position.x-px)<1.4){const z=Math.abs(m.position.z);
+   if(e.t=='leaf'&&z<1.6){leaves++;beep(900+leaves%5*60,.07);S.remove(m);ents.splice(i,1)}
+   else if(e.t=='ob'&&z<e.h+.8&&inv<=0&&!(e.jump&&py>.7)){lives--;inv=e.fall?3:1.6;if(e.fall)tum=1.1;shake=e.fall?.9:.4;beep(e.fall?90:160,.25,'square');if(e.fall)toast('Washed-out road','The ravine edge is no joke. Watch for orange cones ahead.');if(lives<=0)end()}}}
+ if(st=='play'){if(stage>=2){gustIn-=dt;if(gustIn<=0&&gustT<=0){gustDir=pick([-1,1]);gustT=2.6;gustIn=rnd(12,22);toast('Gust of wind','Pushing you '+(gustDir<0?'left':'right')+'. Hold your lane.');try{ctx();nz(AC.currentTime,1.4,500,.18)}catch(e){}}}
+ tipT-=dt;if(tipT<=0){const s0=segs.find(s=>Math.abs(s.position.z)<30);if(s0&&s0.rv){toast('Ravine road safety',TIPS[tipI++%TIPS.length]);tipT=30}}}
+ wind=gustT>0?gustDir*Math.sin((1-(gustT-=dt)/2.6)*Math.PI):0;
+ const k=Math.min(1,dt*(rainOn?5:12));px+=(lane*3+wind*1.1-px)*k;
+ if(tum>0){tum-=dt;const f=1.1-tum;P.position.set(px,-f*f*12,0);P.rotation.set(f*3.5,0,f*6);P.visible=true;if(tum<=0)P.rotation.set(0,0,0)}
+ else{P.position.set(px,py+(py==0&&v>1?Math.sin(t*35)*.025:0),0);P.rotation.z=(px-lane*3)*.08;P.rotation.x=-vy*.01;P.visible=inv<=0||Math.floor(t*14)%2==0}
+ shake=Math.max(0,shake-dt);const sx=(Math.random()-.5)*shake*.8,sy=(Math.random()-.5)*shake*.8;
+ C.position.set(px*.6+sx,5.4+py*.3+sy,9.5);C.lookAt(px*.4,1.6,-12);C.rotation.z=-wind*.04;
+ $('m').textContent=Math.floor(dist).toLocaleString()+' m';$('lf').textContent='Leaves '+leaves;$('sn').textContent=ST[stage].n;$('al').textContent=Math.round(alt(dist)).toLocaleString()+' m ('+Math.round(alt(dist)*3.281).toLocaleString()+' ft) above sea level';
+ $('hp').textContent=st=='play'||st=='over'?'\u2665'.repeat(Math.max(0,lives)):'';$('pr').style.width=Math.min(dist/GEMBU,1)*100+'%';
+ for(const c of CL){c.position.z+=mvz;c.position.x+=dt*(.8+wind*3);if(c.position.z>20){c.position.z=-185;c.position.x=pick([-1,1])*rnd(9,45)}}
+ cm.opacity+=([0,0,.35,.55,.5,.4,.45][stage]-cm.opacity)*Math.min(1,dt*1.5);
+ RP.visible=!!rainOn;if(rainOn){for(let i=0;i<RN;i++){const j=i*3;rp[j+1]-=dt*24;rp[j+2]+=mvz;rp[j]+=wind*dt*5;if(rp[j+1]<0||rp[j+2]>10){rp[j]=rnd(-16,16);rp[j+1]=14;rp[j+2]=rnd(-40,-5)}}rg.attributes.position.needsUpdate=true;
+ rainT-=dt;if(st=='play'&&rainT<=0){rainT=.35;try{ctx();nz(AC.currentTime,.4,3000,.05)}catch(e){}}}
+ SUN.material.opacity=Math.max(.15,Math.min(1,(S.fog.far-100)/100));
+ for(let i=0;i<DN;i++){const j=i*3;dp[j+2]+=mvz;dp[j+1]+=dt*1.2;dp[j]+=(Math.random()-.5)*dt*2+wind*dt*6;if(dp[j+1]>2.4||dp[j+2]>20){dp[j]=px+(Math.random()-.5)*2;dp[j+1]=st=='play'&&py<.05?.2:-9;dp[j+2]=2.3}}dg.attributes.position.needsUpdate=true;
+ R.render(S,C)}
+R.setAnimationLoop(tick);show('menu');
+</script></body></html>
