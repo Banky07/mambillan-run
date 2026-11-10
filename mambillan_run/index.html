@@ -264,4 +264,9 @@ function tick(){const dt=Math.min(clock.getDelta(),.05);t+=dt;
  for(let i=0;i<DN;i++){const j=i*3;dp[j+2]+=mvz;dp[j+1]+=dt*1.2;dp[j]+=(Math.random()-.5)*dt*2+wind*dt*6;if(dp[j+1]>2.4||dp[j+2]>20){dp[j]=px+(Math.random()-.5)*2;dp[j+1]=st=='play'&&py<.05?.2:-9;dp[j+2]=2.3}}dg.attributes.position.needsUpdate=true;
  R.render(S,C)}
 R.setAnimationLoop(tick);show('menu');
-</script></body></html>
+</script>
+<script>
+  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</body></html>
