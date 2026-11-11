@@ -1,5 +1,7 @@
 // Vercel serverless function: weekly leaderboard stored in Upstash Redis (add it from Vercel Marketplace > Storage)
-const U=process.env.UPSTASH_REDIS_REST_URL||process.env.KV_REST_API_URL,T=process.env.UPSTASH_REDIS_REST_TOKEN||process.env.KV_REST_API_TOKEN;
+// Finds the Redis connection even when Vercel adds a prefix to the names (for example M_REDIS_KV_REST_API_URL).
+const E=process.env,pick=n=>E[n]||E[Object.keys(E).find(k=>k.endsWith('_'+n))];
+const U=E.UPSTASH_REDIS_REST_URL||pick('KV_REST_API_URL'),T=E.UPSTASH_REDIS_REST_TOKEN||pick('KV_REST_API_TOKEN');
 const rc=async c=>(await(await fetch(U,{method:'POST',headers:{Authorization:'Bearer '+T},body:JSON.stringify(c)})).json()).result;
 module.exports=async(req,res)=>{
  if(!U||!T)return res.status(503).json({error:'store not configured'});

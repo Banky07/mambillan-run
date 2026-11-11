@@ -1,6 +1,8 @@
 // GET: dashboard stats. POST: save the sponsor ad. Protected by the ADMIN_KEY environment variable.
 const crypto=require('crypto');
-const U=process.env.UPSTASH_REDIS_REST_URL||process.env.KV_REST_API_URL,T=process.env.UPSTASH_REDIS_REST_TOKEN||process.env.KV_REST_API_TOKEN;
+// Finds the Redis connection even when Vercel adds a prefix to the names (for example M_REDIS_KV_REST_API_URL).
+const E=process.env,pick=n=>E[n]||E[Object.keys(E).find(k=>k.endsWith('_'+n))];
+const U=E.UPSTASH_REDIS_REST_URL||pick('KV_REST_API_URL'),T=E.UPSTASH_REDIS_REST_TOKEN||pick('KV_REST_API_TOKEN');
 const pipe=async c=>(await(await fetch(U+'/pipeline',{method:'POST',headers:{Authorization:'Bearer '+T},body:JSON.stringify(c)})).json()).map(x=>x.result);
 const same=(a,b)=>{a=Buffer.from(String(a));b=Buffer.from(String(b));return a.length===b.length&&crypto.timingSafeEqual(a,b)};
 const flat=a=>{const o={};for(let i=0;i<(a||[]).length;i+=2)o[a[i]]=+a[i+1];return o};
