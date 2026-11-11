@@ -22,6 +22,6 @@ module.exports=async(req,res)=>{
  for(let i=n-1;i>=0;i--)days.push(new Date(Date.now()-i*864e5).toISOString().slice(0,10));
  const c=[['ZCOUNT','online',Date.now()-90000,'+inf'],['SCARD','users'],['GET','cfg:ads']];
  days.forEach(d=>c.push(['HGETALL','ev:'+d],['SCARD','dau:'+d],['HGETALL','stg:'+d],['HGETALL','geo:'+d],['HGETALL','ref:'+d],['HGETALL','dev:'+d]));
- const r=await pipe(c);let ad=null;try{ad=JSON.parse(r[2])}catch(e){}
- res.status(200).json({online:r[0],users:r[1],ad,days:days.map((d,i)=>{const o=3+i*6;return{d,ev:flat(r[o]),dau:r[o+1],stg:flat(r[o+2]),geo:flat(r[o+3]),ref:flat(r[o+4]),dev:flat(r[o+5])}})});
+ c.push(['LRANGE','recent',0,29]);const r=await pipe(c);let ad=null;try{ad=JSON.parse(r[2])}catch(e){}
+ res.status(200).json({online:r[0],users:r[1],ad,recent:(r[3+n*6]||[]).map(s=>{try{return JSON.parse(s)}catch(e){return null}}).filter(Boolean),days:days.map((d,i)=>{const o=3+i*6;return{d,ev:flat(r[o]),dau:r[o+1],stg:flat(r[o+2]),geo:flat(r[o+3]),ref:flat(r[o+4]),dev:flat(r[o+5])}})});
 };

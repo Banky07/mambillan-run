@@ -18,6 +18,8 @@ module.exports=async(req,res)=>{
   c.push(['HINCRBY','ev:'+d,ev,1]);
   if(ev==='end')c.push(['HINCRBY','ev:'+d,'dist',Math.min(Math.floor(+b.dist)||0,20000)]);
   if(ev==='stage')c.push(['HINCRBY','stg:'+d,String(b.stage||'').slice(0,30),1]);
+  const o={t:now,ev,c:String(req.headers['x-vercel-ip-country']||'??').slice(0,3),dv:/Mobi|Android/i.test(req.headers['user-agent']||'')?'mobile':'desktop',p:pid.slice(0,6),x:ev==='stage'?String(b.stage||'').slice(0,30):ev==='end'?Math.floor(+b.dist)||0:ev==='visit'?String(b.ref||'direct').slice(0,40):''};
+  c.push(['LPUSH','recent',JSON.stringify(o)],['LTRIM','recent',0,99]);
   if(ev==='visit'){
    c.push(['HINCRBY','geo:'+d,String(req.headers['x-vercel-ip-country']||'??').slice(0,3),1],
     ['HINCRBY','ref:'+d,String(b.ref||'direct').slice(0,40),1],
