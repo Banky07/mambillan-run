@@ -96,6 +96,11 @@ const P=new THREE.Group();
 P.add(mk(B,0xb5532e,1.9,.8,4,0,.85,0),mk(B,0xeef3ee,1.7,.85,1.5,0,1.65,-1.1),mk(B,0x9fd0e8,1.5,.4,.1,0,1.8,-1.86),
  mk(B,0x3f8a4a,1.5,.7,1.7,0,1.55,.9),mk(B,0x4fa05a,1.2,.5,1.2,0,2.1,.9),mk(B,0xff3322,.3,.2,.1,-.7,1,2.02),mk(B,0xff3322,.3,.2,.1,.7,1,2.02),mk(B,0xfff2b0,.3,.25,.1,-.65,.95,-2.02),mk(B,0xfff2b0,.3,.25,.1,.65,.95,-2.02));
 [[-1,-1.3],[1,-1.3],[-1,1.3],[1,1.3]].forEach(([x,z])=>{const w=mk(Y,0x111111,.48,.4,.48,x,.48,z);w.rotation.z=Math.PI/2;P.add(w)});
+{const w=Math.PI/2,sign=(()=>{const c=document.createElement('canvas');c.width=256;c.height=64;const g=c.getContext('2d');g.fillStyle='#2f6b3a';g.fillRect(0,0,256,64);g.fillStyle='#e9b44c';g.font='800 34px system-ui,sans-serif';g.textAlign='center';g.fillText('MAMBILLA TEA',128,45);return new THREE.CanvasTexture(c)})();
+ [-1,1].forEach(s=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(1.7,.42),new THREE.MeshBasicMaterial({map:sign}));p.position.set(s*1.01,1.45,.9);p.rotation.y=s*w;P.add(p);
+  P.add(mk(B,0x222222,.15,.2,.3,s*1,1.85,-1.5),mk(B,0x8a3a1e,.1,.5,2,s*.95,1.45,.9));
+  [-1.3,1.3].forEach(z=>{const h=mk(Y,0xd8d8d8,.2,.44,.2,s,.48,z);h.rotation.z=w;P.add(h)})});
+ P.add(mk(B,0x2a2a2a,1.95,.22,.18,0,.45,-2.05),mk(B,0x2a2a2a,1.95,.22,.18,0,.45,2.05),mk(B,0x1a1a1a,1.1,.35,.08,0,.9,-2.03))}
 P.traverse(o=>o.castShadow=true);S.add(P);
 const DN=50,dp=new Float32Array(DN*3).fill(99),dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(dp,3));
 const dust=new THREE.Points(dg,new THREE.PointsMaterial({color:0xc9b48a,size:.9,transparent:true,opacity:.45,depthWrite:false}));dust.frustumCulled=false;S.add(dust);
@@ -114,7 +119,7 @@ for(let i=0;i<N;i++){const g=new THREE.Group(),dec=new THREE.Group();
  const rd=mk(B,rM,10,.2,L,0,-.1,0);rd.receiveShadow=true;g.gl=mk(B,gM,120,.2,L,-65,-.12,0);g.gr=mk(B,gM,120,.2,L,65,-.12,0);
  g.rl=mk(B,0x9a9a9a,.12,.7,L,-7.6,.35,0);g.rr=mk(B,0x9a9a9a,.12,.7,L,7.6,.35,0);
  g.add(rd,g.gl,g.gr,g.rl,g.rr,mk(B,0x8a5a38,3,18,L,-6.5,-9.12,0),mk(B,0x8a5a38,3,18,L,6.5,-9.12,0),dec);
- for(let j=0;j<5;j++)[-1.5,1.5].forEach(x=>g.add(mk(B,0xe8e0c0,.15,.02,4,x,.02,-L/2+6+j*12)));
+ for(let j=0;j<5;j++)[-1.5,1.5].forEach(x=>g.add(mk(B,0xe8e0c0,.15,.02,4,x,.02,-L/2+6+j*12)));g.add(mk(B,0xe8e0c0,.14,.02,L,-4.6,.02,0),mk(B,0xe8e0c0,.14,.02,L,4.6,.02,0));
  g.dec=dec;g.position.z=30-i*L;S.add(g);segs.push(g)}
 function cow(){const g=new THREE.Group();g.add(mk(B,0xf2efe6,1,1,2.2,0,1.2,0),mk(B,0x5b3a29,1.02,.6,.9,0,1.3,.3),mk(B,0xe8e0d0,.7,.7,.9,0,1.5,-1.4),
  mk(K,0xf5f0d8,.12,.5,.12,-.3,2,-1.4),mk(K,0xf5f0d8,.12,.5,.12,.3,2,-1.4));
@@ -128,6 +133,8 @@ function fill(sg,d){sg.dec.clear();const b=ST[bi(d)],D=sg.dec;
  if(b.hut)for(let i=0;i<2;i++){const g=new THREE.Group();g.add(mk(B,0xc98a5a,2.4,1.6,2.4,0,.8,0),mk(K,0x8a6a3a,2,1.2,2,0,2.2,0));g.position.set(pick([-1,1])*rnd(8,16),0,rnd(-28,28));D.add(g)}
  if(b.tea)for(let i=0;i<2;i++){const s=pick([-1,1]),x=s*rnd(9,16),z=rnd(-24,24);for(let j=0;j<4;j++)D.add(mk(B,0x3f9a48,.9,.7,14,x+s*j*1.7,.35,z))}
  if(b.cow)for(let i=0;i<2;i++){const c=cow();c.position.set(pick([-1,1])*rnd(8,14),0,rnd(-28,28));c.rotation.y=rnd(0,6);D.add(c)}
+ for(let i=0;i<3;i++)D.add(mk(IC,b.lf,.7,.5,.7,pick([-1,1])*rnd(5.6,7.5),.3,rnd(-30,30)));
+ for(let j=-1;j<=1;j++)[-1,1].forEach(q=>{if(Math.random()<.6)D.add(mk(Y,0x6b4a2b,.09,5,.09,q*6.4,2.5,j*20),mk(B,0x6b4a2b,1.6,.1,.1,q*6.4,4.7,j*20))});
  const rv=Math.random()<(b.rv||0)*(rainOn?1.4:1)?pick([-1,1]):0;sg.rv=rv;sg.gl.position.y=rv==-1?-18:-.12;sg.gr.position.y=rv==1?-18:-.12;sg.rl.visible=rv==-1;sg.rr.visible=rv==1;
  if(rv)D.children.slice().forEach(c=>{if(c.position.x*rv>0){if(Math.abs(c.position.x)<9)D.remove(c);else c.position.y-=18}})}
 segs.forEach((s,i)=>fill(s,i*L));
@@ -150,7 +157,7 @@ function mkGate(n,t){const c=document.createElement('canvas');c.width=1024;c.hei
  const G=new THREE.Group();G.add(p,mk(B,0xb5532e,.6,8,.6,-6.3,4,0),mk(B,0xb5532e,.6,8,.6,6.3,4,0));return G}
 const ents=[];
 function add(m,x,z,e){if(e.t=='ob')m.traverse(o=>o.castShadow=true);m.position.x=x;m.position.z=z;S.add(m);e.m=m;ents.push(e)}
-function spawn(b){const ls=[-1,0,1].sort(()=>Math.random()-.5),nb=dist>300&&Math.random()<.35?2:1,free=ls[nb];
+function spawn(b){if(dist>150&&Math.random()<.16)crossCow();const ls=[-1,0,1].sort(()=>Math.random()-.5),nb=dist>300&&Math.random()<.35?2:1,free=ls[nb];
  for(let i=0;i<nb;i++){const o=ob(rainOn&&dist>1600&&Math.random()<.25?'gap':pick(b.ob));add(o.m,ls[i]*3,-190,{t:'ob',h:o.h,jump:o.jump,fall:o.fall,lane:ls[i]})}
  for(let j=0;j<5;j++){const m=mk(O,0x6fd06a,.9,1.5,.35,0,1.2,0);m.rotation.z=.5;add(m,free*3,-190-j*3.2,{t:'leaf',lane:free})}}
 
@@ -165,6 +172,12 @@ function evt(k,dz){const z=-dz;clearNear(z);spawnIn=60;
  else{toast('Cattle crossing','Herders are moving cattle over the road. Weave through.');add(mkGate('Cattle crossing','Herders on the road'),0,z+22,{t:'gate'});
   for(let i=0;i<5;i++){const d=i%2?1:-1,c=cow();c.rotation.y=-d*Math.PI/2;add(c,-d*(10+i*3.5),z-i*5,{t:'ob',h:1.4,lane:0,vx:d*(4+i*.3)})}
   add(herder(),-12,z-26,{t:'gate',vx:4})}}
+function crossCow(){const d=Math.random()<.5?1:-1,vx=d*rnd(3,5),ln=pick([-1,0,1]),T=190/Math.max(v,12),c=cow();c.rotation.y=-d*Math.PI/2;add(c,ln*3-vx*T,-190,{t:'ob',h:1.4,lane:0,vx,cow:1,ph:rnd(0,6)})}
+let SG;function stampMesh(){const w=new THREE.Group(),g=new THREE.Group(),rm=new THREE.MeshStandardMaterial({color:0xd0282a,emissive:0x9a1010,emissiveIntensity:.9,roughness:.4}),d=new THREE.Mesh(new THREE.CylinderGeometry(1,1,.25,24),rm),r=new THREE.Mesh(new THREE.TorusGeometry(1.05,.12,8,28),mat(0xe9b44c)),st=new THREE.Mesh(new THREE.OctahedronGeometry(.45),new THREE.MeshStandardMaterial({color:0xfff2d0,emissive:0xffe0a0,emissiveIntensity:.6}));
+ d.rotation.x=Math.PI/2;st.scale.set(1,1,.35);g.add(d,r,st);g.position.y=1.9;
+ if(!SG){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),q=x.createRadialGradient(32,32,0,32,32,32);q.addColorStop(0,'rgba(255,60,50,.9)');q.addColorStop(1,'rgba(255,60,50,0)');x.fillStyle=q;x.fillRect(0,0,64,64);SG=new THREE.CanvasTexture(c)}
+ const gl=new THREE.Sprite(new THREE.SpriteMaterial({map:SG,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));gl.scale.set(6,6,1);gl.position.y=1.9;w.add(g,gl);return w}
+function stampGet(){if(lives<3){lives++;toast('Red stamp!','A life restored.')}else{inv=5;toast('Red stamp!','Lives are full, so you get 5 seconds of protection.')}beep(660,.12);beep(990,.2);beep(1320,.3)}
 /* ---------- audio ---------- */
 let AC,MG,mut=0,seqI,step=0,nextT=0,root=261.6,musFile=0;
 function ctx(){if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.gain.value=mut?0:.8;MG.connect(AC.destination)}return AC}
@@ -191,7 +204,7 @@ function adUI(c){if(!AD||!AD.text||!AD.link)return;const a=document.createElemen
  if(AD.img){const i=document.createElement('img');i.src=AD.img;i.alt='';i.style.cssText='width:56px;height:56px;object-fit:cover;border-radius:8px';a.appendChild(i)}
  const t=document.createElement('span'),m=document.createElement('b');t.innerHTML='<small class="h">Sponsored</small>';m.textContent=AD.text;t.appendChild(m);a.appendChild(t);a.onclick=()=>track('ad_click');c.appendChild(a);track('ad_view')}
 /* ---------- state ---------- */
-let tum=0,wind=0,gustIn=15,gustT=0,gustDir=0,tipT=8,tipI=0,posted=0,runT=0,st='menu',v=6,dist=0,lives=3,leaves=0,lane=0,px=0,py=0,vy=0,inv=0,spawnIn=40,stage=0,shake=0,t=0,gated={},reachedG=false,toastT;
+let stampAt=[],tum=0,wind=0,gustIn=15,gustT=0,gustDir=0,tipT=8,tipI=0,posted=0,runT=0,st='menu',v=6,dist=0,lives=3,leaves=0,lane=0,px=0,py=0,vy=0,inv=0,spawnIn=40,stage=0,shake=0,t=0,gated={},reachedG=false,toastT;
 const clock=new THREE.Clock();
 function toast(n,tx){const e=$('toast');e.innerHTML='<b>'+n+'</b><span>'+tx+'</span>';e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),4200)}
 function stamps(){return ST.map(s=>'<span class="'+(SV.stamps.includes(s.n)?'on':'')+'">'+s.n+'</span>').join('')+'<span class="'+(SV.stamps.includes('Rain Gembu')?'on':'')+'">Gembu in the rains</span>'}
@@ -225,7 +238,7 @@ function show(k){const o=$('ov'),c=$('card');o.classList.remove('hide');
  else{const sn=ST[stage].n;c.innerHTML='<h1>'+(reachedG?'You reached Gembu':'Run over at '+sn)+'</h1><p>'+Math.floor(dist).toLocaleString()+' m driven, '+leaves+' leaves collected.'+(dist>=SV.best&&dist>50?' New personal best.':'')+'</p><h2>Your journey stamps</h2><div class="st">'+stamps()+'</div><button id="go">Run again</button><button class="alt" id="sh">Share score</button><button class="alt" id="cd">Result card</button>'+info}
  $('go').onclick=start;lbUI(k,c);modeUI(c);adUI(c);const cd=$('cd');if(cd)cd.onclick=card;const sh=$('sh');if(sh)sh.onclick=()=>{track('share');const x='I reached '+ST[stage].n+' on Mambillan Run, '+Math.floor(dist)+' m up the Mambilla Plateau. Can you make it to Gembu? '+location.href;
   if(navigator.share)navigator.share({text:x}).catch(()=>{});else if(navigator.clipboard){navigator.clipboard.writeText(x);sh.textContent='Copied to clipboard'}}}
-function start(){ents.splice(0).forEach(e=>S.remove(e.m));dist=0;lives=3;leaves=0;lane=0;px=0;py=0;vy=0;inv=0;spawnIn=40;stage=0;gated={};reachedG=false;st='play';rainOn=rainSel;rM.roughness=rainOn?.3:.92;EV.forEach(x=>x.d=0);env(ST[0],1);
+function start(){ents.splice(0).forEach(e=>S.remove(e.m));dist=0;lives=3;leaves=0;lane=0;px=0;py=0;vy=0;inv=0;spawnIn=40;stage=0;gated={};reachedG=false;st='play';rainOn=rainSel;rM.roughness=rainOn?.3:.92;EV.forEach(x=>x.d=0);stampAt=[Math.floor(rnd(900,1700))].concat(Math.random()<.5?[Math.floor(rnd(2600,3300))]:[]);env(ST[0],1);
  $('ov').classList.add('hide');beep(440,.1);track('start',{rain:rainOn});root=261.6;music(1);posted=0;runT=0;tum=0;wind=0;gustIn=15;gustT=0;tipT=8;toast(ST[0].n,gt(ST[0])+' ('+ST[0].he+') '+ST[0].t);if(!SV.stamps.includes('Jalingo')){SV.stamps.push('Jalingo');save()}}
 function end(){st='over';SV.best=Math.max(SV.best,dist);SV.leaves+=leaves;SV.runs++;save();track('end',{dist:Math.floor(dist),leaves});beep(120,.5,'sawtooth');music(0);setTimeout(()=>show('over'),700)}
 
@@ -247,14 +260,15 @@ function tick(){const dt=Math.min(clock.getDelta(),.05);t+=dt;
  if(st=='play'){
   if(si>stage){stage=si;const s=ST[si];track('stage',{stage:s.n});toast(s.n,gt(s)+' ('+s.he+') '+s.t);root=[261.6,293.7,329.6,261.6,349.2,392,329.6][si];beep(660,.15);beep(880,.25);if(!SV.stamps.includes(s.n)){SV.stamps.push(s.n);save()}if(s.n=='Gembu'){reachedG=true;if(rainOn&&!SV.stamps.includes('Rain Gembu')){SV.stamps.push('Rain Gembu');save()}}}
   for(let i=1;i<ST.length;i++)if(!gated[i]&&dist+170>=ST[i].at){gated[i]=1;const g=mkGate(ST[i].n,gt(ST[i])+' ('+ST[i].he+')');add(g,0,-(ST[i].at-dist),{t:'gate'})}
-  EV.forEach(x=>{if(!x.d&&dist+170>=x.at){x.d=1;evt(x.k,x.at-dist)}});spawnIn-=mvz;if(spawnIn<=0){spawn(ST[si]);spawnIn=Math.max(16,40-dist*.004)+rnd(0,10)}
+  EV.forEach(x=>{if(!x.d&&dist+170>=x.at){x.d=1;evt(x.k,x.at-dist)}});
+  if(stampAt.length&&dist+170>=stampAt[0]){const z=-(stampAt[0]-dist);clearNear(z);add(stampMesh(),pick([-1,0,1])*3,z,{t:'stamp'});toast('Red stamp ahead','Grab it to restore a life.');stampAt.shift()}spawnIn-=mvz;if(spawnIn<=0){spawn(ST[si]);spawnIn=Math.max(16,40-dist*.004)+rnd(0,10)}
   vy-=45*dt;py+=vy*dt;if(py<0){py=0;vy=0}
   inv=Math.max(0,inv-dt)}
- for(let i=ents.length-1;i>=0;i--){const e=ents[i],m=e.m;m.position.z+=mvz;if(e.vx)m.position.x+=e.vx*dt;if(e.t=='leaf')m.rotation.y+=dt*3;
+ for(let i=ents.length-1;i>=0;i--){const e=ents[i],m=e.m;m.position.z+=mvz;if(e.vx){m.position.x+=e.vx*dt;if(e.cow)m.position.y=Math.abs(Math.sin(t*7+e.ph))*.12}if(e.t=='leaf'||e.t=='stamp')m.rotation.y+=dt*(e.t=='stamp'?2.2:3);
   if(m.position.z>16){S.remove(m);ents.splice(i,1);continue}
   if(st=='play'&&e.t!='gate'&&Math.abs(m.position.x-px)<1.4){const z=Math.abs(m.position.z);
    if(e.t=='leaf'&&z<1.6){leaves++;beep(900+leaves%5*60,.07);S.remove(m);ents.splice(i,1)}
-   else if(e.t=='ob'&&z<e.h+.8&&inv<=0&&!(e.jump&&py>.7)){lives--;inv=e.fall?3:1.6;if(e.fall)tum=1.1;shake=e.fall?.9:.4;beep(e.fall?90:160,.25,'square');if(e.fall)toast('Washed-out road','The ravine edge is no joke. Watch for orange cones ahead.');if(lives<=0)end()}}}
+   else if(e.t=='stamp'&&z<1.8){stampGet();S.remove(m);ents.splice(i,1)}else if(e.t=='ob'&&z<e.h+.8&&inv<=0&&!(e.jump&&py>.7)){lives--;inv=e.fall?3:1.6;if(e.fall)tum=1.1;shake=e.fall?.9:.4;beep(e.fall?90:160,.25,'square');if(e.cow){try{ctx();tn(AC.currentTime,200,.6,'sawtooth',.3,110)}catch(x){}toast('Moo! Cow collision','You lost a life. Watch for cattle crossing the road.')}if(e.fall)toast('Washed-out road','The ravine edge is no joke. Watch for orange cones ahead.');if(lives<=0)end()}}}
  if(st=='play'){if(stage>=2){gustIn-=dt;if(gustIn<=0&&gustT<=0){gustDir=pick([-1,1]);gustT=2.6;gustIn=rnd(12,22);toast('Gust of wind','Pushing you '+(gustDir<0?'left':'right')+'. Hold your lane.');try{ctx();nz(AC.currentTime,1.4,500,.18)}catch(e){}}}
  tipT-=dt;if(tipT<=0){const s0=segs.find(s=>Math.abs(s.position.z)<30);if(s0&&s0.rv){toast('Ravine road safety',TIPS[tipI++%TIPS.length]);tipT=30}}}
  wind=gustT>0?gustDir*Math.sin((1-(gustT-=dt)/2.6)*Math.PI):0;
@@ -262,7 +276,7 @@ function tick(){const dt=Math.min(clock.getDelta(),.05);t+=dt;
  if(tum>0){tum-=dt;const f=1.1-tum;P.position.set(px,-f*f*12,0);P.rotation.set(f*3.5,0,f*6);P.visible=true;if(tum<=0)P.rotation.set(0,0,0)}
  else{P.position.set(px,py+(py==0&&v>1?Math.sin(t*35)*.025:0),0);P.rotation.z=(px-lane*3)*.08;P.rotation.x=-vy*.01;P.visible=inv<=0||Math.floor(t*14)%2==0}
  shake=Math.max(0,shake-dt);const sx=(Math.random()-.5)*shake*.8,sy=(Math.random()-.5)*shake*.8;
- C.position.set(px*.6+sx,5.4+py*.3+sy,9.5);C.lookAt(px*.4,1.6,-12);C.rotation.z=-wind*.04;
+ C.position.set(px*.6+sx,5.4+py*.3+sy,9.5);C.lookAt(px*.4,1.6,-12);C.rotation.z=-wind*.04;C.fov+=((62+Math.min(v,38)*.35)-C.fov)*.1;C.updateProjectionMatrix();
  $('m').textContent=Math.floor(dist).toLocaleString()+' m';$('lf').textContent='Leaves '+leaves;$('sn').textContent=ST[stage].n;$('al').textContent=Math.round(alt(dist)).toLocaleString()+' m ('+Math.round(alt(dist)*3.281).toLocaleString()+' ft) above sea level';
  $('hp').textContent=st=='play'||st=='over'?'\u2665'.repeat(Math.max(0,lives)):'';$('pr').style.width=Math.min(dist/GEMBU,1)*100+'%';
  for(const c of CL){c.position.z+=mvz;c.position.x+=dt*(.8+wind*3);if(c.position.z>20){c.position.z=-185;c.position.x=pick([-1,1])*rnd(9,45)}}

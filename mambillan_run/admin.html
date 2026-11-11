@@ -17,6 +17,7 @@ label{display:block;margin:8px 0 3px;font-size:13px;opacity:.8}#ad input[type=te
 <h2>Day by day</h2><div class="w"><table id="tb"></table></div>
 <h2>How far players get (stage reached, last 14 days)</h2><div id="fn"></div>
 <div class="g" style="margin-top:6px"><div><h2>Countries</h2><div id="geo"></div></div><div><h2>Where visitors come from</h2><div id="ref"></div></div><div><h2>Devices</h2><div id="dev"></div></div></div>
+<h2>Recent activity (latest 30 events, newest first)</h2><div class="w"><table id="rc"></table></div>
 <h2>Sponsor ad (shown on the menu and game-over screens)</h2>
 <div id="ad" class="c"><label><input type="checkbox" id="on"> Ad is live</label><label>Sponsor text (max 120 characters)</label><input type="text" id="tx" maxlength="120"><label>Image URL (https, optional)</label><input type="url" id="im"><label>Link (https)</label><input type="url" id="ln"><p style="margin-top:10px"><button id="sv">Save ad</button> <small id="sm"></small></p><p id="as" style="margin-top:10px"></p></div>
 </div>
@@ -36,6 +37,8 @@ function draw(j){const D=j.days,Td=D[D.length-1],e=Td.ev,s=f=>D.reduce((a,d)=>a+
  $('tb').innerHTML='<tr><th>Date</th><th>Players</th><th>New</th><th>Returning</th><th>Runs</th><th>Avg m</th><th>Shares</th></tr>'+D.slice().reverse().map(d=>'<tr><td>'+d.d+'</td><td>'+(d.dau||0)+'</td><td>'+(d.ev.new||0)+'</td><td>'+(d.ev.returning||0)+'</td><td>'+(d.ev.start||0)+'</td><td>'+Math.round((d.ev.dist||0)/(d.ev.end||1))+'</td><td>'+(d.ev.share||0)+'</td></tr>').join('');
  const st=Object.fromEntries(agg(j,'stg'));st.Jalingo=s('start');bars('fn',SN.map(n=>[n,st[n]||0]));bars('geo',agg(j,'geo'));bars('ref',agg(j,'ref'));bars('dev',agg(j,'dev'));
  $('as').innerHTML='Click-through rate: <strong>'+(v?(c/v*100).toFixed(1):'0.0')+'%</strong> ('+c+' clicks from '+v+' views)';
+ const EN={visit:'Opened the game',start:'Started a run',stage:'Reached a stage',end:'Finished a run',share:'Shared',ad_view:'Saw the ad',ad_click:'Clicked the ad'},ago=t=>{const x=(Date.now()-t)/1000;return x<60?Math.round(x)+' s ago':x<3600?Math.round(x/60)+' min ago':x<86400?Math.round(x/3600)+' h ago':new Date(t).toLocaleDateString()};
+ $('rc').innerHTML='<tr><th>When</th><th>What</th><th>Detail</th><th>Country</th><th>Device</th><th>Player</th></tr>'+((j.recent||[]).length?j.recent.map(r=>'<tr><td>'+ago(r.t)+'</td><td>'+esc(EN[r.ev]||r.ev)+'</td><td>'+esc(r.ev==='end'?r.x+' m':r.x||'')+'</td><td>'+esc(r.c)+'</td><td>'+esc(r.dv)+'</td><td>'+esc(r.p)+'</td></tr>').join(''):'<tr><td colspan="6">Nothing yet. Events appear here as people play.</td></tr>');
  if(!filled){filled=1;const a=j.ad||{};$('on').checked=!!a.on;$('tx').value=a.text||'';$('im').value=a.img||'';$('ln').value=a.link||''}}
 $('go').onclick=()=>{K=$('k').value.trim();load()};$('k').onkeydown=e=>{if(e.key==='Enter')$('go').click()};
 $('sv').onclick=async()=>{const r=await fetch('/api/admin',{method:'POST',headers:{Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({on:$('on').checked,text:$('tx').value,img:$('im').value,link:$('ln').value})}),j=await r.json();$('sm').textContent=r.ok?'Saved.':(j.error||'Error')};
