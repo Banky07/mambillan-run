@@ -1,0 +1,43 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Mambillan Run admin</title>
+<style>
+:root{--ink:#1c2a22;--tea:#2f6b3a;--clay:#b5532e;--gold:#e9b44c;--mist:#eef3ee}
+*{box-sizing:border-box;margin:0}body{background:var(--ink);color:var(--mist);font:15px/1.4 system-ui,sans-serif;padding:18px;max-width:980px;margin:auto}
+h1{color:var(--gold);font-size:26px;margin-bottom:12px}h2{font-size:15px;margin:22px 0 8px;color:var(--gold)}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.c{background:#ffffff14;border-radius:10px;padding:12px}.c b{display:block;font-size:28px}.c span{opacity:.75;font-size:13px}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 8px;text-align:right;border-bottom:1px solid #ffffff18}td:first-child,th:first-child{text-align:left}.w{overflow-x:auto}
+.bar{display:flex;align-items:center;gap:8px;margin:4px 0}.bar i{display:block;height:14px;background:var(--tea);border-radius:3px;min-width:2px}.bar em{font-style:normal;width:150px;flex:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+input,button{font:inherit;padding:9px;border-radius:8px;border:1px solid #eef3ee66;background:#0003;color:inherit}button{background:var(--clay);border:0;font-weight:700;cursor:pointer}
+label{display:block;margin:8px 0 3px;font-size:13px;opacity:.8}#ad input[type=text],#ad input[type=url]{width:100%}small{opacity:.75}
+</style></head><body>
+<h1>Mambillan Run admin</h1>
+<div id="lg"><input id="k" type="password" placeholder="Admin key"> <button id="go">Open dashboard</button> <small id="er"></small></div>
+<div id="app" hidden>
+<div class="g" id="cards"></div>
+<h2>Players per day</h2><svg id="ch" viewBox="0 0 700 150" width="100%" role="img" aria-label="Players per day"></svg>
+<h2>Day by day</h2><div class="w"><table id="tb"></table></div>
+<h2>How far players get (stage reached, last 14 days)</h2><div id="fn"></div>
+<div class="g" style="margin-top:6px"><div><h2>Countries</h2><div id="geo"></div></div><div><h2>Where visitors come from</h2><div id="ref"></div></div><div><h2>Devices</h2><div id="dev"></div></div></div>
+<h2>Sponsor ad (shown on the menu and game-over screens)</h2>
+<div id="ad" class="c"><label><input type="checkbox" id="on"> Ad is live</label><label>Sponsor text (max 120 characters)</label><input type="text" id="tx" maxlength="120"><label>Image URL (https, optional)</label><input type="url" id="im"><label>Link (https)</label><input type="url" id="ln"><p style="margin-top:10px"><button id="sv">Save ad</button> <small id="sm"></small></p><p id="as"></p></div>
+</div>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])),
+SN=['Jalingo','Bali','Serti','Ngel Nyaki Forest','Mambilla Tea Highlands','Gembu','Chappal Waddi'];
+let K=sessionStorage.getItem('mrk')||'',filled=0;
+async function load(){try{const r=await fetch('/api/admin?days=14',{headers:{Authorization:'Bearer '+K}}),j=await r.json();
+ if(!r.ok){$('er').textContent=j.error||'Error';$('lg').hidden=false;$('app').hidden=true;return}
+ sessionStorage.setItem('mrk',K);$('lg').hidden=true;$('app').hidden=false;draw(j)}catch(e){$('er').textContent='Could not reach the server.'}}
+function agg(j,f){const o={};j.days.forEach(d=>Object.entries(d[f]).forEach(([k,v])=>o[k]=(o[k]||0)+v));return Object.entries(o).sort((a,b)=>b[1]-a[1])}
+function bars(id,e,max){max=max||Math.max(1,...e.map(x=>x[1]));$(id).innerHTML=e.length?e.slice(0,8).map(([k,v])=>'<div class="bar"><em>'+esc(k)+'</em><i style="width:'+Math.round(v/max*100)+'px"></i> '+v+'</div>').join(''):'<small>No data yet.</small>'}
+function draw(j){const D=j.days,Td=D[D.length-1],e=Td.ev,s=f=>D.reduce((a,d)=>a+(d.ev[f]||0),0),v=s('ad_view'),c=s('ad_click');
+ const cd=[[j.online,'Online now'],[j.users,'Players ever (devices)'],[Td.dau,'Players today'],[e.visit||0,'Visits today'],[e.start||0,'Runs started today'],[Math.round((e.dist||0)/(e.end||1))+' m','Average run today'],[(e.new||0)+' / '+(e.returning||0),'New / returning today'],[v+' / '+c,'Ad views / clicks (14 days)']];
+ $('cards').innerHTML=cd.map(x=>'<div class="c"><b>'+x[0]+'</b><span>'+x[1]+'</span></div>').join('');
+ const mx=Math.max(1,...D.map(d=>d.dau||0));$('ch').innerHTML=D.map((d,i)=>{const h=Math.round((d.dau||0)/mx*100),x=i*50+6;return'<rect x="'+x+'" y="'+(115-h)+'" width="38" height="'+h+'" rx="3" fill="#e9b44c"/><text x="'+(x+19)+'" y="'+(110-h)+'" fill="#eef3ee" font-size="12" text-anchor="middle">'+(d.dau||0)+'</text><text x="'+(x+19)+'" y="135" fill="#eef3ee" font-size="11" text-anchor="middle" opacity=".7">'+d.d.slice(5)+'</text>'}).join('');
+ $('tb').innerHTML='<tr><th>Date</th><th>Players</th><th>New</th><th>Returning</th><th>Runs</th><th>Avg m</th><th>Shares</th></tr>'+D.slice().reverse().map(d=>'<tr><td>'+d.d+'</td><td>'+(d.dau||0)+'</td><td>'+(d.ev.new||0)+'</td><td>'+(d.ev.returning||0)+'</td><td>'+(d.ev.start||0)+'</td><td>'+Math.round((d.ev.dist||0)/(d.ev.end||1))+'</td><td>'+(d.ev.share||0)+'</td></tr>').join('');
+ const st=Object.fromEntries(agg(j,'stg'));bars('fn',SN.map(n=>[n,st[n]||0]));bars('geo',agg(j,'geo'));bars('ref',agg(j,'ref'));bars('dev',agg(j,'dev'));
+ $('as').innerHTML='Click-through rate: <b>'+(v?(c/v*100).toFixed(1):'0.0')+'%</b> ('+c+' clicks from '+v+' views)';
+ if(!filled){filled=1;const a=j.ad||{};$('on').checked=!!a.on;$('tx').value=a.text||'';$('im').value=a.img||'';$('ln').value=a.link||''}}
+$('go').onclick=()=>{K=$('k').value.trim();load()};$('k').onkeydown=e=>{if(e.key==='Enter')$('go').click()};
+$('sv').onclick=async()=>{const r=await fetch('/api/admin',{method:'POST',headers:{Authorization:'Bearer '+K,'Content-Type':'application/json'},body:JSON.stringify({on:$('on').checked,text:$('tx').value,img:$('im').value,link:$('ln').value})}),j=await r.json();$('sm').textContent=r.ok?'Saved.':(j.error||'Error')};
+setInterval(()=>{if(K&&!document.hidden&&!$('app').hidden)load()},30000);if(K)load();
+</script></body></html>

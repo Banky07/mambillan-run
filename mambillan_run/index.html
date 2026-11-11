@@ -35,7 +35,9 @@ small.h{display:block;opacity:.75;font-size:13px;line-height:1.4}
 #lb{margin-top:10px}ol{padding-left:22px;font-size:15px;font-weight:500;line-height:1.5;margin-bottom:8px}
 input{font:inherit;padding:11px;border-radius:8px;border:2px solid var(--mist);background:#0003;color:var(--mist);width:150px;margin:0 8px 8px 0}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
-</style></head><body>
+</style><script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script>
+<script defer src="/_vercel/insights/script.js"></script>
+</head><body>
 <div id="hud"><div><span id="m">0 m</span><small id="lf">Leaves 0</small></div><div style="text-align:center"><span id="sn">Jalingo</span><small id="al"></small></div><div class="r" id="hp"></div></div>
 <div id="bar"><i id="pr"></i></div>
 <div id="toast"></div>
@@ -181,6 +183,13 @@ function music(on){clearInterval(seqI);if(mut)on=0;if(musFile){on?mf.play().catc
 function toggleMute(){mut=!mut;$('mu').textContent=mut?'Sound off':'Sound on';if(MG)MG.gain.value=mut?0:.8;music(st=='play')}
 $('mu').onclick=toggleMute;
 
+/* ---------- anonymous usage stats + sponsor slot ---------- */
+const PID=(()=>{let p;try{p=localStorage.getItem('mrpid');if(!p){p=crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12);localStorage.setItem('mrpid',p)}}catch(e){p=Date.now().toString(36)+Math.random().toString(36).slice(2,12)}return p})();
+function track(ev,x){try{const b=JSON.stringify(Object.assign({pid:PID,ev},x||{}));if(navigator.sendBeacon)navigator.sendBeacon('/api/track',new Blob([b],{type:'application/json'}));else fetch('/api/track',{method:'POST',body:b,keepalive:true}).catch(()=>{})}catch(e){}}
+let AD=null;
+function adUI(c){if(!AD||!AD.text||!AD.link)return;const a=document.createElement('a');a.href=AD.link;a.target='_blank';a.rel='sponsored noopener';a.style.cssText='display:flex;gap:10px;align-items:center;margin-top:12px;padding:10px;border:1px solid #eef3ee44;border-radius:10px;color:inherit;text-decoration:none';
+ if(AD.img){const i=document.createElement('img');i.src=AD.img;i.alt='';i.style.cssText='width:56px;height:56px;object-fit:cover;border-radius:8px';a.appendChild(i)}
+ const t=document.createElement('span'),m=document.createElement('b');t.innerHTML='<small class="h">Sponsored</small>';m.textContent=AD.text;t.appendChild(m);a.appendChild(t);a.onclick=()=>track('ad_click');c.appendChild(a);track('ad_view')}
 /* ---------- state ---------- */
 let tum=0,wind=0,gustIn=15,gustT=0,gustDir=0,tipT=8,tipI=0,posted=0,runT=0,st='menu',v=6,dist=0,lives=3,leaves=0,lane=0,px=0,py=0,vy=0,inv=0,spawnIn=40,stage=0,shake=0,t=0,gated={},reachedG=false,toastT;
 const clock=new THREE.Clock();
@@ -196,7 +205,7 @@ function lbUI(k,c){const d=document.createElement('div');d.id='lb';c.appendChild
 function modeUI(c){const d=document.createElement('div');
  if(SV.stamps.includes('Gembu')){const b=document.createElement('button'),f=()=>{b.textContent='Rainy season: '+(rainSel?'on':'off')};b.className='alt';f();b.onclick=()=>{rainSel=rainSel?0:1;rainOn=rainSel;rM.roughness=rainOn?.3:.92;f()};d.appendChild(b)}
  else d.innerHTML='<small class="h">Reach Gembu to unlock rainy season: slippery roads, heavy rain and more washouts.</small>';c.insertBefore(d,$('lb'))}
-function card(){const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),b=ST[stage],hx=x=>'#'+x.toString(16).padStart(6,'0'),F='Bricolage Grotesque,system-ui,sans-serif';
+function card(){track('share');const W=1080,H=1350,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d'),b=ST[stage],hx=x=>'#'+x.toString(16).padStart(6,'0'),F='Bricolage Grotesque,system-ui,sans-serif';
  const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,hx(b.sky));gr.addColorStop(.7,'#eef3ee');g.fillStyle=gr;g.fillRect(0,0,W,H);
  g.fillStyle=hx(b.hill);[[100,1050,520,260],[620,1050,560,300],[1000,1050,420,220]].forEach(([x,y,rx,ry])=>{g.beginPath();g.ellipse(x,y,rx,ry,0,Math.PI,0);g.fill()});
  g.fillStyle=hx(b.gr);g.fillRect(0,1050,W,H-1050);g.fillStyle='#3b3d40';g.beginPath();g.moveTo(W/2-90,1050);g.lineTo(W/2+90,1050);g.lineTo(W/2+330,H);g.lineTo(W/2-330,H);g.fill();
@@ -212,13 +221,13 @@ function card(){const W=1080,H=1350,c=document.createElement('canvas');c.width=W
 function show(k){const o=$('ov'),c=$('card');o.classList.remove('hide');
  const nx=ST.find(s=>!SV.stamps.includes(s.n));
  const info='<small class="h">Best: '+Math.floor(SV.best).toLocaleString()+' m. Streak: '+SV.streak+(SV.streak==1?' day':' days')+'. Stamps: '+ST.filter(s=>SV.stamps.includes(s.n)).length+' of '+ST.length+'.'+(nx?' Next stamp: '+nx.n+' at '+nx.at.toLocaleString()+' m.':' Full passport. Beat your best.')+'</small>';
- if(k=='menu')c.innerHTML='<h1>Mambillan Run</h1><p>Drive a tea lorry from Jalingo up the Mambilla Plateau to Gembu. Dodge cattle, okadas and potholes, collect tea leaves, and earn a stamp in every town and landscape.</p><h2>Your journey stamps</h2><div class="st">'+stamps()+'</div><button id="go">Start the journey</button>'+info+'<small class="h" style="margin-top:8px">Arrow keys or A/D change lane. Space or swipe up jumps potholes. On a phone, swipe left or right to change lane.</small>';
+ if(k=='menu')c.innerHTML='<h1>Mambillan Run</h1><p>Drive a tea lorry from Jalingo up the Mambilla Plateau to Gembu. Dodge cattle, okadas and potholes, collect tea leaves, and earn a stamp in every town and landscape.</p><h2>Your journey stamps</h2><div class="st">'+stamps()+'</div><button id="go">Start the journey</button>'+info+'<small class="h" style="margin-top:8px">Arrow keys or A/D change lane. Space or swipe up jumps potholes. On a phone, swipe left or right to change lane.</small><small class="h" style="margin-top:8px">We count visits and plays anonymously to improve the game.</small>';
  else{const sn=ST[stage].n;c.innerHTML='<h1>'+(reachedG?'You reached Gembu':'Run over at '+sn)+'</h1><p>'+Math.floor(dist).toLocaleString()+' m driven, '+leaves+' leaves collected.'+(dist>=SV.best&&dist>50?' New personal best.':'')+'</p><h2>Your journey stamps</h2><div class="st">'+stamps()+'</div><button id="go">Run again</button><button class="alt" id="sh">Share score</button><button class="alt" id="cd">Result card</button>'+info}
- $('go').onclick=start;lbUI(k,c);modeUI(c);const cd=$('cd');if(cd)cd.onclick=card;const sh=$('sh');if(sh)sh.onclick=()=>{const x='I reached '+ST[stage].n+' on Mambillan Run, '+Math.floor(dist)+' m up the Mambilla Plateau. Can you make it to Gembu? '+location.href;
+ $('go').onclick=start;lbUI(k,c);modeUI(c);adUI(c);const cd=$('cd');if(cd)cd.onclick=card;const sh=$('sh');if(sh)sh.onclick=()=>{track('share');const x='I reached '+ST[stage].n+' on Mambillan Run, '+Math.floor(dist)+' m up the Mambilla Plateau. Can you make it to Gembu? '+location.href;
   if(navigator.share)navigator.share({text:x}).catch(()=>{});else if(navigator.clipboard){navigator.clipboard.writeText(x);sh.textContent='Copied to clipboard'}}}
 function start(){ents.splice(0).forEach(e=>S.remove(e.m));dist=0;lives=3;leaves=0;lane=0;px=0;py=0;vy=0;inv=0;spawnIn=40;stage=0;gated={};reachedG=false;st='play';rainOn=rainSel;rM.roughness=rainOn?.3:.92;EV.forEach(x=>x.d=0);env(ST[0],1);
- $('ov').classList.add('hide');beep(440,.1);root=261.6;music(1);posted=0;runT=0;tum=0;wind=0;gustIn=15;gustT=0;tipT=8;toast(ST[0].n,gt(ST[0])+' ('+ST[0].he+') '+ST[0].t);if(!SV.stamps.includes('Jalingo')){SV.stamps.push('Jalingo');save()}}
-function end(){st='over';SV.best=Math.max(SV.best,dist);SV.leaves+=leaves;SV.runs++;save();beep(120,.5,'sawtooth');music(0);setTimeout(()=>show('over'),700)}
+ $('ov').classList.add('hide');beep(440,.1);track('start',{rain:rainOn});root=261.6;music(1);posted=0;runT=0;tum=0;wind=0;gustIn=15;gustT=0;tipT=8;toast(ST[0].n,gt(ST[0])+' ('+ST[0].he+') '+ST[0].t);if(!SV.stamps.includes('Jalingo')){SV.stamps.push('Jalingo');save()}}
+function end(){st='over';SV.best=Math.max(SV.best,dist);SV.leaves+=leaves;SV.runs++;save();track('end',{dist:Math.floor(dist),leaves});beep(120,.5,'sawtooth');music(0);setTimeout(()=>show('over'),700)}
 
 /* ---------- input ---------- */
 function mv(d){if(st=='play'){lane=Math.max(-1,Math.min(1,lane+d));beep(300,.05)}}
@@ -236,7 +245,7 @@ function tick(){const dt=Math.min(clock.getDelta(),.05);t+=dt;
  segs.forEach(s=>{s.position.z+=mvz;if(s.position.z>42){s.position.z-=N*L;fill(s,dist+N*L-30)}});
  const si=bi(dist);env(ST[st=='play'?si:stage],Math.min(1,dt*1.2));
  if(st=='play'){
-  if(si>stage){stage=si;const s=ST[si];toast(s.n,gt(s)+' ('+s.he+') '+s.t);root=[261.6,293.7,329.6,261.6,349.2,392,329.6][si];beep(660,.15);beep(880,.25);if(!SV.stamps.includes(s.n)){SV.stamps.push(s.n);save()}if(s.n=='Gembu'){reachedG=true;if(rainOn&&!SV.stamps.includes('Rain Gembu')){SV.stamps.push('Rain Gembu');save()}}}
+  if(si>stage){stage=si;const s=ST[si];track('stage',{stage:s.n});toast(s.n,gt(s)+' ('+s.he+') '+s.t);root=[261.6,293.7,329.6,261.6,349.2,392,329.6][si];beep(660,.15);beep(880,.25);if(!SV.stamps.includes(s.n)){SV.stamps.push(s.n);save()}if(s.n=='Gembu'){reachedG=true;if(rainOn&&!SV.stamps.includes('Rain Gembu')){SV.stamps.push('Rain Gembu');save()}}}
   for(let i=1;i<ST.length;i++)if(!gated[i]&&dist+170>=ST[i].at){gated[i]=1;const g=mkGate(ST[i].n,gt(ST[i])+' ('+ST[i].he+')');add(g,0,-(ST[i].at-dist),{t:'gate'})}
   EV.forEach(x=>{if(!x.d&&dist+170>=x.at){x.d=1;evt(x.k,x.at-dist)}});spawnIn-=mvz;if(spawnIn<=0){spawn(ST[si]);spawnIn=Math.max(16,40-dist*.004)+rnd(0,10)}
   vy-=45*dt;py+=vy*dt;if(py<0){py=0;vy=0}
@@ -264,4 +273,6 @@ function tick(){const dt=Math.min(clock.getDelta(),.05);t+=dt;
  for(let i=0;i<DN;i++){const j=i*3;dp[j+2]+=mvz;dp[j+1]+=dt*1.2;dp[j]+=(Math.random()-.5)*dt*2+wind*dt*6;if(dp[j+1]>2.4||dp[j+2]>20){dp[j]=px+(Math.random()-.5)*2;dp[j+1]=st=='play'&&py<.05?.2:-9;dp[j+2]=2.3}}dg.attributes.position.needsUpdate=true;
  R.render(S,C)}
 R.setAnimationLoop(tick);show('menu');
+try{const q=new URLSearchParams(location.search).get('utm_source');let h='direct';try{h=new URL(document.referrer).host||'direct'}catch(e){}track('visit',{ref:q?'utm:'+q:h})}catch(e){}
+fetch('/api/track').then(r=>r.json()).then(j=>{AD=j.ad}).catch(()=>{});setInterval(()=>{if(!document.hidden)track('ping')},30000);
 </script></body></html>
